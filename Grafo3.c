@@ -55,33 +55,24 @@ ADJACENCIA *criaAdj(int v, int peso){
 	return(temp);    //retorno endereço da adjacencia 
 }
 
-int criaAresta(GRAFO *gr, int vi, int vf, TIPOPESO p){    //vai de vi a vf
-	if (!gr) return 0;
-    if (vf < 0 || vf >= gr->vertices) return 0;
-    if (vi < 0 || vi >= gr->vertices) return 0;
-
-    // Verifica se a aresta já existe
-    ADJACENCIA* ad = gr->adj[vi].cab;
-    while (ad) {
-        if (ad->vertice == vf) {
-            // A aresta já existe, não precisa criar novamente
-            return 0;
-        }
-        ad = ad->prox;
-    }
-
-    ADJACENCIA* novo = criaAdj(vf, p);
-    novo->prox = gr->adj[vi].cab;
-    gr->adj[vi].cab = novo;
-    gr->arestas++;
-    return 1;
+bool criaAresta(GRAFO *gr, int vi, int vf, TIPOPESO p){    //vai de vi a vf
+	if(!gr) return (false);    //validações se o grafico existe
+	if((vf < 0) || (vf >= gr->vertices)) return (false);   //validações se os valores não são negativos
+	if((vf < 0) || (vf >= gr->vertices)) return (false);   //ou maiores que o numero de vertices do grafo
+	
+	ADJACENCIA *novo = criaAdj(vf, p);   ///crio adjacencia com o vertice final e o peso
+	//coloco a adjancencia na lista do vertice inicial
+	novo->prox = gr->adj[vi].cab;     //o campo prox da adjacencia vai receber a cabeça da lista
+	gr->adj[vi].cab = novo;    //e a cabeça da lista passa a ser o novo elemento
+	gr->arestas++;     //atualizo o numero de aresta no grafo
+	return (true);
 }
 
 /*Exibindo estado do grafo negativamente*/
 void imprime(GRAFO *gr){
 	//validações se o grafo existe
 	
-   printf("Quantidade de Vértices: %d\n", gr->vertices);
+printf("Quantidade de Vértices: %d\n", gr->vertices);
     printf("Quantidade de Arestas: %d\n", gr->arestas);
 
     printf("Matriz de Adjacência:\n");
@@ -113,6 +104,7 @@ void imprime(GRAFO *gr){
         }
         printf("\n");
     }
+	
 }
 
 // Função para calcular o valor total do caminho a partir do grafo
@@ -136,67 +128,69 @@ TIPOPESO calculaValorCaminho(GRAFO* gr, int caminho[], int tamanho) {
     return valorTotal;
 }
 
-// Implementação da Busca em Largura (BFS)
-void buscaEmLargura(GRAFO* gr, int inicio) {
+
+// Implementação da Busca em Profundidade (DFS)
+void buscaEmProfundidade(GRAFO* gr, int inicio) {
     if (!gr || inicio < 0 || inicio >= gr->vertices) {
         return;
     }
 
     bool* visitado = (bool*)malloc(gr->vertices * sizeof(bool));
+    int* sequencia = (int*)malloc(gr->vertices * sizeof(int));
+    int sequenciaIndex = 0;
+
     for (int i = 0; i < gr->vertices; i++) {
         visitado[i] = false;
     }
 
-    int* fila = (int*)malloc(gr->vertices * sizeof(int));
-    int frente = -1;
-    int tras = -1;
+    printf("Busca em Profundidade a partir do vértice %d:\n", inicio);
 
-    printf("Busca em Largura a partir do vértice %d:\n", inicio);
-
-    visitado[inicio] = true;
-    fila[++tras] = inicio;
-
-    while (frente != tras) {
-        int vertice = fila[++frente];
+    void dfs(int vertice) {
+        visitado[vertice] = true;
+        sequencia[sequenciaIndex++] = vertice;
         printf("v%d ", vertice);
 
         ADJACENCIA* ad = gr->adj[vertice].cab;
         while (ad) {
             int adjacente = ad->vertice;
             if (!visitado[adjacente]) {
-                visitado[adjacente] = true;
-                fila[++tras] = adjacente;
+                dfs(adjacente);
             }
             ad = ad->prox;
         }
     }
 
+    dfs(inicio);
+    printf("\n");
+
+    printf("Sequência calculada pela busca em profundidade:\n");
+    for (int i = 0; i < gr->vertices; i++) {
+        printf("v%d ", sequencia[i]);
+    }
     printf("\n");
 
     free(visitado);
-    free(fila);
+    free(sequencia);
 }
-
 
 int main(int argc, char** argv) {
 	
-    int numVertices = 15;
+	int numVertices = 15;
     GRAFO* grafo = criaGrafo(numVertices);
 
     criaAresta(grafo, 0, 1, 1);
-    criaAresta(grafo, 0, 2, 1);
-    criaAresta(grafo, 1, 3, 1);
+    criaAresta(grafo, 1, 2, 1);
     criaAresta(grafo, 1, 4, 1);
-    criaAresta(grafo, 1, 5, 1);
-    criaAresta(grafo, 3, 6, 1);
-    criaAresta(grafo, 3, 7, 1);
-    criaAresta(grafo, 5, 8, 1);
-    criaAresta(grafo, 5, 9, 1);
-    criaAresta(grafo, 7, 10, 1);
-    criaAresta(grafo, 7, 11, 1);
-    criaAresta(grafo, 7, 12, 1);
-    criaAresta(grafo, 9, 13, 1);
-    criaAresta(grafo, 9, 14, 1);
+    criaAresta(grafo, 2, 3, 1);
+    criaAresta(grafo, 2, 4, 1);
+    criaAresta(grafo, 2, 9, 1);
+    criaAresta(grafo, 3, 4, 1);
+    criaAresta(grafo, 4, 5, 1);
+    criaAresta(grafo, 4, 6, 1);
+    criaAresta(grafo, 4, 7, 1);
+    criaAresta(grafo, 5, 6, 1);
+    criaAresta(grafo, 7, 8, 1);
+    criaAresta(grafo, 7, 9, 1);
 
     imprime(grafo);
     
@@ -206,7 +200,7 @@ int main(int argc, char** argv) {
     
     printf("Valor total do caminho {1, 2, 3, 4, 5}: %d\n", valorCaminho);
 
-    buscaEmLargura(grafo, 1);
-    
+    buscaEmProfundidade(grafo, 0);
+	
 	return 0;
 }
